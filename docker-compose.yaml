@@ -1,0 +1,24 @@
+services:
+  grafana:
+    user: root
+    container_name: 'cytoscope-panels'
+
+    build:
+      context: ./.config
+      args:
+        grafana_image: "grafana/grafana"
+        grafana_version: "11.4.0"
+        anonymous_auth_enabled: true
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/cytoscope-panels
+      - ./provisioning:/etc/grafana/provisioning
+      - .:/root/cytoscope-panels
+
+    environment:
+      NODE_ENV: development
+      GF_LOG_FILTERS: plugin.cytoscope-panels:debug
+      GF_LOG_LEVEL: info
+      GF_DATAPROXY_LOGGING: 1
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: cytoscope-panels
