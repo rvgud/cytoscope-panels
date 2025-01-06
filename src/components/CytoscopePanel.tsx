@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { PanelProps } from '@grafana/data';
 import cytoscape from 'cytoscape';
-import { ServerHealthTreePanelOptions } from 'types';
+import { CytoscopePanelOptions } from 'types';
 import { css, cx } from '@emotion/css';
 import { useStyles2 } from '@grafana/ui';
 
-interface Props extends PanelProps<ServerHealthTreePanelOptions> {}
+interface Props extends PanelProps<CytoscopePanelOptions> {}
 
 const getStyles = () => {
   return {

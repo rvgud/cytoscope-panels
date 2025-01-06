@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "panel",
-  "name": "Serverhealthtree",
+  "name": "cytoscopepanels",
   "id": "cytoscope-panels",
   "info": {
     "keywords": ["panel"],
