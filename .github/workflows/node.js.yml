@@ -26,14 +26,14 @@ jobs:
     
     # Zip the dist folder
     - name: Zip dist folder
-      run: zip -r dist-${{ matrix.node-version }}.zip dist
+      run: zip -r ${{ env.tag_name }}.zip dist
 
     # Upload the zip file as an artifact
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: dist-${{ matrix.node-version }}
-        path: dist-${{ matrix.node-version }}.zip
+        name: ${{ env.tag_name }}
+        path: ${{ env.tag_name }}.zip
 
   release:
     needs: build
@@ -54,6 +54,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.tag_name }}
-          files: artifacts/*.zip
+          files: artifacts/${{ env.tag_name }}/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
