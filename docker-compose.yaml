@@ -2,11 +2,10 @@ services:
   grafana:
     user: root
     container_name: 'cytoscope-panels'
-
     build:
       context: ./.config
       args:
-        grafana_image: "grafana/grafana"
+        grafana_image: "grafana"
         grafana_version: "11.4.0"
         anonymous_auth_enabled: true
     ports:

@@ -25,29 +25,35 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
   const styles = useStyles2(getStyles);
   const cyRef = useRef<cytoscape.Core | null>(null);
   const levelColors: Record<number, string> = {};
+  var selectedLayout = options.typeOfLayout
+  var selectedLayoutOptions = options.layoutOptions
   const transformDataToElements = () => {
     const elements: cytoscape.ElementDefinition[] = [];
     const resultArray: Array<{ [key: string]: string }> = [];
 
-    const dynamicKeys = options.orderOfLables ? options.orderOfLables.split(',') : [];
-
+    var groupingKeys = options.groupingOrderOfLables ? options.groupingOrderOfLables.split(',') : [];
+    
     data.series.forEach((series) => {
       const labelField = series.fields[1];
       const valueField = series.fields[1];
 
       if (!labelField || !valueField) {
-        console.warn("Missing labels or values in series:", series);
         return;
       }
-
       const labelsArray = labelField.labels;
       const valuesArray = valueField.values.toArray();
-
       if (labelsArray && valuesArray.length > 0) {
-        const result: any = {};
-        dynamicKeys.forEach((key) => {
-          result[key] = labelsArray[key] || "unknown";
-        });
+        var result: any = {};
+        if (selectedLayout && selectedLayout !== 'breadthfirst') {
+          result=labelsArray
+          
+        }
+        else{
+          groupingKeys.forEach((key) => {
+            result[key] = labelsArray[key] || "unknown";
+          });
+        }
+        
         result.value = valuesArray[0];
 
         resultArray.push(result);
@@ -77,7 +83,10 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
 
     const getRandomColor = () =>
       `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
-    const groupedData = groupData(resultArray, dynamicKeys);
+    if (resultArray.length > 0 && groupingKeys.length ===0) {
+      groupingKeys = Object.keys(resultArray[0]);
+    } 
+    const groupedData = groupData(resultArray, groupingKeys);
     const generateElements = (data: Record<string, any>, parentId: string = '',depth: number = 0) => {
       if (!levelColors[depth]) {
         levelColors[depth] = getRandomColor(); // Assign a random color for this depth level
@@ -117,6 +126,23 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
 
   useEffect(() => {
     if (!cyRef.current) {
+      var layout = {
+        name: selectedLayout,
+        directed: true, // default value
+        spacingFactor: 1.5, // default value
+      };
+      
+      try {
+        if(selectedLayoutOptions){
+          const parsedOptions = JSON.parse(selectedLayoutOptions);
+          Object.keys(parsedOptions).forEach((key) => {
+            if (!(key in layout)) {
+              layout[key] = parsedOptions[key];
+            }
+          });
+        }
+      } catch (error) {
+      }
       const elements = transformDataToElements();
       cyRef.current = cytoscape({
         container: document.getElementById('cytoscape-container'),
@@ -165,31 +191,29 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
             },
           },
         ],
-        layout: {
-          name: 'breadthfirst',
-          directed: true,
-          spacingFactor: 1.5, // Adjust the spacing to suit your needs
-        },
+        layout: layout,
       });
 
       let lastClickedNodeId: string | null = null;
       var nodeCount=0
       const showAllDescendants = (nodeId: string) => {
-        nodeCount++;
-        const node = cyRef.current.getElementById(nodeId);
-        if (!node) return;
+        if(cyRef.current){
+          nodeCount++;
+          const node = cyRef.current.getElementById(nodeId);
+          if (!node) return;
 
-        node.show(); // Show the clicked node
+          node.show(); // Show the clicked node
 
-        // Recursively show children
-        const childEdges = cyRef.current.edges(`[source="${nodeId}"]`);
-        childEdges.forEach((edge) => {
-          edge.target().show(); // Show child node
-          showAllDescendants(edge.target().id()); // Recurse
-        });
+          // Recursively show children
+          const childEdges = cyRef.current.edges(`[source="${nodeId}"]`);
+          childEdges.forEach((edge) => {
+            edge.target().show(); // Show child node
+            showAllDescendants(edge.target().id()); // Recurse
+          });
+      }
       };
 
-      const restructureLayout = (clickedNodeId) => {
+      const restructureLayout = () => {
         if (cyRef.current) {
           cyRef.current.style()
           .selector('node')
@@ -200,7 +224,7 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
           })
           .update();
           cyRef.current.layout({
-            name: 'breadthfirst',
+            name: selectedLayout,
             directed: true,
             equidistant: true,
             minNodeSpacing: 0.1,
@@ -214,7 +238,7 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
       const restructureLayoutBack = () => {
         if (cyRef.current) {
           cyRef.current.layout({
-            name: 'breadthfirst',
+            name: selectedLayout,
             directed: true,
             spacingFactor: 1.5, // Pull nodes closer
           }).run();
@@ -222,21 +246,22 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
       };
 
       cyRef.current.on('tap', 'node', (event) => {
-        const clickedNode = event.target;
-        const clickedNodeId = clickedNode.id();
-        if (lastClickedNodeId === clickedNodeId) {
-          cyRef.current.nodes().show(); // Show all nodes
-          restructureLayoutBack(); // Re-apply the layout
-          lastClickedNodeId = null;
-        } else {
-          cyRef.current.nodes().hide(); // Hide all nodes
-          showAllDescendants(clickedNodeId); // Show the clicked node and descendants
-          restructureLayout(clickedNodeId); // Re-apply the layout to bring nodes closer
-          lastClickedNodeId = clickedNodeId;
+        if (cyRef.current) {
+          const clickedNode = event.target;
+          const clickedNodeId = clickedNode.id();
+          if (lastClickedNodeId === clickedNodeId) {
+            cyRef.current.nodes().show(); // Show all nodes
+            restructureLayoutBack(); // Re-apply the layout
+            lastClickedNodeId = null;
+          } else {
+            cyRef.current.nodes().hide(); // Hide all nodes
+            showAllDescendants(clickedNodeId); // Show the clicked node and descendants
+            restructureLayout(); // Re-apply the layout to bring nodes closer
+            lastClickedNodeId = clickedNodeId;
+          }
         }
       });
     }
-
     return () => {
       if (cyRef.current) {
         cyRef.current.destroy();

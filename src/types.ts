@@ -1,4 +1,6 @@
 
 export interface CytoscopePanelOptions {
-  orderOfLables: string;
+  groupingOrderOfLables: string;
+  typeOfLayout: string;
+  layoutOptions: string;
 }
