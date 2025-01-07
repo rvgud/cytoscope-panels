@@ -155,11 +155,13 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
               'width': '30px',
               'height': '30px',
               "font-size": 2,
-              color: '#fff',
+              color: '#ffffff',
               backgroundColor: '#0066cc',
               label: 'data(label)',
               "text-halign": "center",
               "text-valign": "center",
+              'text-wrap': 'ellipsis',
+              'text-max-width': '25px',
             },
           },
           {
@@ -221,6 +223,8 @@ export const CytoscopePanel: React.FC<Props> = ({ data, width, height, options }
             'width': '30px',
             'height': '30px',
             "font-size": 3,
+            'text-wrap': 'ellipsis',
+            'text-max-width': '25px',
           })
           .update();
           cyRef.current.layout({
